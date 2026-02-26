@@ -93,35 +93,36 @@ def build_subplot(stations_df, title, cols, rows):
 
 # --- Streamlit Tab Content ---
 def show():
-    st.subheader("IOC Indonesia Tide Gauge Dashboard")
+    #st.subheader("IOC Indonesia Tide Gauge Dashboard")
 
     # Folium map
-    st.markdown("### Tide Gauge Map")
+    #st.markdown("### Tide Gauge Map")
     m = build_map(stations_df)
     st_folium(m, width=None, height=500)
 
     # Regional plots
-    st.markdown("### Sumatra Tide Gauges")
+    #st.markdown("### Sumatra Tide Gauges")
     if not sumatra_df.empty:
         st.plotly_chart(build_subplot(sumatra_df, "Sumatra Sea Level", cols=3, rows=7))
     else:
         st.info("No Sumatra stations available.")
 
-    st.markdown("### Java Tide Gauges")
+    #st.markdown("### Java Tide Gauges")
     if not java_df.empty:
         st.plotly_chart(build_subplot(java_df, "Java Sea Level", cols=3, rows=9))
     else:
         st.info("No Java stations available.")
 
-    st.markdown("### Sulawesi Tide Gauges")
+    #st.markdown("### Sulawesi Tide Gauges")
     if not sulawesi_df.empty:
         st.plotly_chart(build_subplot(sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     else:
         st.info("No Sulawesi stations available.")
 
-    st.markdown("### Papua Tide Gauges")
+    #st.markdown("### Papua Tide Gauges")
     if not papua_df.empty:
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
