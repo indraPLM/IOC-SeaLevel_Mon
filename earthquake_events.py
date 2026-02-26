@@ -118,22 +118,38 @@ def build_closest_graphs(df):
 def show():
     st.subheader("Earthquake & IOC Sea Level Dashboard 🌏")
 
-    # Map
-    st.markdown("### Earthquake Epicenter & Tide Stations")
-    m = build_map_with_eq(stations_df, y0, x0)
-    st_folium(m, width=800, height=500)
+    # --- Top Panel ---
+    st.markdown("## Top Panel")
+    col_top1, col_top2 = st.columns([2, 1])  # wider map, narrower comparison
 
-    # Comparison
-    st.markdown("### Earthquake Magnitude Comparison")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("BMKG", f"{m0:.2f}")
-    col2.metric("GFZ", f"{gfz_match['mag']:.2f}" if gfz_match is not None else "N/A")
-    col3.metric("USGS", f"{usgs_match['mag']:.2f}" if usgs_match is not None else "N/A")
+    with col_top1:
+        st.markdown("### Earthquake Epicenter & Tide Stations")
+        m = build_map_with_eq(stations_df, y0, x0)
+        st_folium(m, width="100%", height=500)
 
-    # BMKG Table
-    st.markdown("### BMKG Events (M ≥ 5)")
-    st.dataframe(bmkg_df, use_container_width=True)
+    with col_top2:
+        st.markdown("### Earthquake Parameters")
+        st.write(f"**Coordinates:** Lat {y0:.2f}, Lon {x0:.2f}")
+        st.write(f"**Depth:** {d0:.1f} km")
 
-    # Closest Stations Graphs
+        # Magnitude comparison
+        bmkg_val = m0
+        gfz_val = gfz_match['mag'] if gfz_match is not None else None
+        usgs_val = usgs_match['mag'] if usgs_match is not None else None
+
+        st.metric("BMKG", f"{bmkg_val:.2f}")
+        st.metric("GFZ", f"{gfz_val:.2f}" if gfz_val else "N/A")
+        st.metric("USGS", f"{usgs_val:.2f}" if usgs_val else "N/A")
+
+        # Differences
+        if gfz_val:
+            st.write(f"**BMKG − GFZ:** {bmkg_val - gfz_val:+.2f}")
+        if usgs_val:
+            st.write(f"**BMKG − USGS:** {bmkg_val - usgs_val:+.2f}")
+
+    # --- Bottom Panel ---
+    st.markdown("## Bottom Panel")
     st.markdown("### Closest Tide Gauge Stations")
     st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+
+
