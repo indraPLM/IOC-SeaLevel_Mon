@@ -1,6 +1,6 @@
 import streamlit as st
 import regional_map
-import tide_gauge
+#import tide_gauge
 import earthquake_events
 
 st.set_page_config(page_title="Tsunami & Tide Gauge Dashboard", layout="wide")
@@ -14,7 +14,9 @@ with tab1:
     regional_map.show()
 
 with tab2:
-    tide_gauge.show()
+    earthquake_events.show()
 
 with tab3:
-    earthquake_events.show()
+    
+    tide_gauge.show()
+
