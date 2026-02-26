@@ -13,7 +13,7 @@ import plotly.graph_objs as go
 import streamlit as st
 from streamlit_folium import st_folium
 
-API_KEY = os.getenv("IOC_API_KEY", "354a1bc9fc147727d6eaf353d03b8aab9ec085ef87b823299ea65ab117a201ffc6c79ca7a8b87a76ba7452408fe20a2d48d4fb4481a9eb47c30f5cf5eb35472b")
+API_KEY = os.getenv("IOC_API_KEY", api_key)
 
 # --- Utility Functions ---
 def fetch_text_data(url, delimiter='|'):
@@ -180,6 +180,7 @@ def show():
     # --- Bottom Panel ---
     st.markdown("### Closest Tide Gauge Stations")
     st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+
 
 
 
