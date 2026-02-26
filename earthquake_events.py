@@ -40,22 +40,40 @@ def get_stations(api_key):
 def build_map_with_eq(df, eq_lat, eq_lon):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
     m = folium.Map(location=[eq_lat, eq_lon], tiles=tiles, attr="ESRI", zoom_start=5)
+
     for _, row in df.iterrows():
         if pd.notnull(row["Lat"]) and pd.notnull(row["Lon"]):
-            folium.Marker([row["Lat"], row["Lon"]],
-                          tooltip=row["Code"]).add_to(m)
-    folium.Marker([eq_lat, eq_lon],
-                  popup="Earthquake Epicenter",
-                  tooltip="EQ Epicenter",
-                  icon=folium.DivIcon(html="""<div style="font-size:50px; color:red;">★</div>""")).add_to(m)
-    return m
+            popup_text = (
+                f"<b>Code:</b> {row['Code']}<br>"
+                f"<b>Location:</b> {row['Location']}<br>"
+                f"<b>Country:</b> {row['country']}<br>"
+                f"<b>Status:</b> {row['status']}"
+            )
 
-#def build_closest_graphs(df):
-#    fig = sp.make_subplots(rows=len(df), cols=1, subplot_titles=[code for code in df["Code"]])
-#    for i, row in enumerate(df.itertuples(), start=1):
-#        fig.add_trace(go.Scatter(x=[0], y=[0], mode="lines", name=row.Code), row=i, col=1)
-#    fig.update_layout(height=300*len(df)) # , title="Sea Level at Closest Stations")
-#    return fig
+            # Choose marker color based on status
+            if row["status"] == 5:
+                marker_color = "red"
+            elif row["status"] == 1:
+                marker_color = "green"
+            else:
+                marker_color = "blue"
+
+            folium.Marker(
+                location=[row["Lat"], row["Lon"]],
+                popup=popup_text,
+                tooltip=row["Code"],
+                icon=folium.Icon(color=marker_color, icon="info-sign")
+            ).add_to(m)
+
+    # Add earthquake epicenter marker
+    folium.Marker(
+        location=[eq_lat, eq_lon],
+        popup="Earthquake Epicenter",
+        tooltip="EQ Epicenter",
+        icon=folium.DivIcon(html="""<div style="font-size:50px; color:red;">★</div>""")
+    ).add_to(m)
+
+    return m
 
 # --- Fetch Tide Gauge Data ---
 def fetch_data(api_key, station_id, sensor="one-sensor",
@@ -219,6 +237,7 @@ def show(api_key):
     st.markdown("### Closest Tide Gauge Stations")
                     
     st.plotly_chart(build_closest_graphs(api_key, closest_stations), use_container_width=True)
+
 
 
 
