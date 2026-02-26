@@ -27,7 +27,7 @@ st.markdown(
 )
 
 st.title("🌊 Tsunami Event & IOC Tide Gauge Dashboard")
-st.markdown("Modularized Streamlit app with tabs.")
+#st.markdown("Modularized Streamlit app with tabs.")
 
 # --- API Key Input ---
 api_key = st.text_input("Enter IOC API Key:", type="password")
@@ -50,6 +50,7 @@ if api_key:
         tide_gauge.show(api_key)
 else:
     st.warning("Please enter your IOC API Key to continue.")
+
 
 
 
