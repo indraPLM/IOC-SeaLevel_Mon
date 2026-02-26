@@ -76,13 +76,20 @@ def build_map_with_eq(df, eq_lat, eq_lon):
     return m
 
 # --- Fetch Tide Gauge Data ---
-def fetch_data(api_key, station_id, sensor="one-sensor",
-               start_date="2026-02-20", end_date="2026-02-23"):
+def fetch_data(api_key, station_id, sensor="one-sensor"):
+    # Compute dynamic date range: end = now, start = 1 day before
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=1)
+
+    # Format as YYYY-MM-DD for IOC API
+    end_str = end_date.strftime("%Y-%m-%d")
+    start_str = start_date.strftime("%Y-%m-%d")
+
     station_id = station_id.lower()
     url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
     params = {
         "days_per_page": 7, "page": 1,
-        "timestart": start_date, "timestop": end_date,
+        "timestart": start_str, "timestop": end_str,
         "flag_qc": "true"
     }
     headers = {"X-Api-Key": api_key, "Accept": "application/json"}
@@ -96,7 +103,6 @@ def fetch_data(api_key, station_id, sensor="one-sensor",
                 df["stime"] = pd.to_datetime(df["stime"])
             return df
     return pd.DataFrame(columns=["stime", "slevel"])
-
 
 # --- Helper to build subplot figure for closest stations ---
 def build_closest_graphs(api_key, stations_df):
@@ -238,6 +244,7 @@ def show(api_key):
                     
     st.plotly_chart(build_closest_graphs(api_key, closest_stations), use_container_width=True)
     st.dataframe(stations_df)
+
 
 
 
