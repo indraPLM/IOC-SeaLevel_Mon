@@ -9,7 +9,7 @@ import plotly.subplots as sp
 import plotly.graph_objs as go
 from streamlit_folium import st_folium
 
-API_KEY = os.getenv("IOC_API_KEY", "354a1bc9fc147727d6eaf353d03b8aab9ec085ef87b823299ea65ab117a201ffc6c79ca7a8b87a76ba7452408fe20a2d48d4fb4481a9eb47c30f5cf5eb35472b")
+API_KEY = os.getenv("IOC_API_KEY", api_key)
 
 # --- Fetch IOC Stations ---
 def get_stations():
@@ -124,6 +124,7 @@ def show():
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
 
