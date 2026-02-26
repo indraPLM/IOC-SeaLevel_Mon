@@ -54,7 +54,7 @@ def build_closest_graphs(df):
     fig = sp.make_subplots(rows=len(df), cols=1, subplot_titles=[code for code in df["Code"]])
     for i, row in enumerate(df.itertuples(), start=1):
         fig.add_trace(go.Scatter(x=[0], y=[0], mode="lines", name=row.Code), row=i, col=1)
-    fig.update_layout(height=300*len(df), title="Sea Level at Closest Stations")
+    fig.update_layout(height=300*len(df)) # , title="Sea Level at Closest Stations")
     return fig
 
 # --- Streamlit Tab Content ---
@@ -105,7 +105,7 @@ def show(api_key):
     stations_df["distance_km"] = stations_df.apply(
         lambda row: geo_distance(y0, x0, row["Lat"], row["Lon"]) if pd.notnull(row["Lat"]) else None, axis=1
     )
-    closest_stations = stations_df.nsmallest(5, "distance_km")
+    closest_stations = stations_df.nsmallest(10, "distance_km")
 
     # --- Layout ---
     col_top1, col_top2 = st.columns([2, 1])
@@ -169,5 +169,6 @@ def show(api_key):
     # --- Bottom Panel ---
     st.markdown("### Closest Tide Gauge Stations")
     st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+
 
 
