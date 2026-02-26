@@ -9,7 +9,7 @@ import plotly.subplots as sp
 import plotly.graph_objs as go
 from streamlit_folium import st_folium
 
-API_KEY = os.getenv("IOC_API_KEY", api_key)
+#API_KEY = os.getenv("IOC_API_KEY", api_key)
 
 # --- Fetch IOC Stations ---
 def get_stations():
@@ -56,12 +56,12 @@ def build_map(df):
 
 # --- Fetch Tide Gauge Data ---
 def fetch_data(station_id, sensor="one-sensor",
-               start_date="2026-02-20", end_date="2026-02-23"):
+               start_date="2026-02-20", end_date="2026-02-23",api_key):
     station_id = station_id.lower()
     url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
     params = {"days_per_page": 7, "page": 1,
               "timestart": start_date, "timestop": end_date, "flag_qc": "true"}
-    headers = {"X-Api-Key": API_KEY, "Accept": "application/json"}
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
     r = requests.get(url, params=params, headers=headers)
 
     if r.status_code == 200:
@@ -124,6 +124,7 @@ def show():
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
 
