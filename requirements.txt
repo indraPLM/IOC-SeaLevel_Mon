@@ -10,3 +10,4 @@ shapely
 bs4
 lxml
 obspy
+setuptools==80.9.0
