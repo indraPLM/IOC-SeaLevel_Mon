@@ -1,6 +1,5 @@
 # regional_map.py
 
-import os
 import requests
 import pandas as pd
 import folium
@@ -8,8 +7,6 @@ import streamlit as st
 import plotly.subplots as sp
 import plotly.graph_objs as go
 from streamlit_folium import st_folium
-
-#API_KEY = os.getenv("IOC_API_KEY", api_key)
 
 # --- Fetch IOC Stations ---
 def get_stations(api_key):
@@ -19,8 +16,6 @@ def get_stations(api_key):
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
 
-stations_df = get_stations(api_key)
-
 # --- Regional Filters ---
 def filter_region(df, lon_min, lon_max, lat_min, lat_max):
     return df[
@@ -29,33 +24,20 @@ def filter_region(df, lon_min, lon_max, lat_min, lat_max):
         (df["Lat"].between(lat_min, lat_max))
     ]
 
-sumatra_df = filter_region(stations_df, 90, 104, -5, 6)
-java_df    = filter_region(stations_df, 104, 118, -12, -5)
-sulawesi_df= filter_region(stations_df, 118, 128, -5, 5)
-papua_df   = filter_region(stations_df, 128, 145, -8, 2)
-
 # --- Build Folium Map ---
 def build_map(df):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
     m = folium.Map(location=[0, 118], tiles=tiles, attr="ESRI", zoom_start=4.5)
     for _, row in df.iterrows():
         if pd.notnull(row["Lat"]) and pd.notnull(row["Lon"]):
-            popup_text = f""" 
-            <b>Code:</b> {row['Code']}<br> 
-            <b>Location:</b> {row['Location']}<br> 
-            <b>Country:</b> {row['country']}<br> 
-            <b>Status:</b> {row['status']} """
-            marker_color = "red" if row["status"] == 5 else "green" if row["status"] == 1 else "blue"
             folium.Marker(
                 location=[row["Lat"], row["Lon"]],
-                popup=popup_text,
-                tooltip=row["Code"],
-                icon=folium.Icon(color=marker_color, icon="info-sign")
+                tooltip=row["Code"]
             ).add_to(m)
     return m
 
 # --- Fetch Tide Gauge Data ---
-def fetch_data(api_key,station_id, sensor="one-sensor",
+def fetch_data(api_key, station_id, sensor="one-sensor",
                start_date="2026-02-20", end_date="2026-02-23"):
     station_id = station_id.lower()
     url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
@@ -74,12 +56,12 @@ def fetch_data(api_key,station_id, sensor="one-sensor",
     return pd.DataFrame(columns=["stime", "slevel"])
 
 # --- Helper to build subplot figure ---
-def build_subplot(stations_df, title, cols, rows):
+def build_subplot(api_key, stations_df, title, cols, rows):
     stations = stations_df["Code"].tolist()
     fig = sp.make_subplots(rows=rows, cols=cols,
                            subplot_titles=[code.upper() for code in stations])
     for i, code in enumerate(stations):
-        df = fetch_data(code)
+        df = fetch_data(api_key, code)
         row = i // cols + 1
         col = i % cols + 1
         if not df.empty and "stime" in df.columns:
@@ -93,43 +75,24 @@ def build_subplot(stations_df, title, cols, rows):
 
 # --- Streamlit Tab Content ---
 def show(api_key):
-    #st.subheader("IOC Indonesia Tide Gauge Dashboard")
+    stations_df = get_stations(api_key)
+
+    # Regional subsets
+    sumatra_df = filter_region(stations_df, 90, 104, -5, 6)
+    java_df    = filter_region(stations_df, 104, 118, -12, -5)
+    sulawesi_df= filter_region(stations_df, 118, 128, -5, 5)
+    papua_df   = filter_region(stations_df, 128, 145, -8, 2)
 
     # Folium map
-    #st.markdown("### Tide Gauge Map")
     m = build_map(stations_df)
-    st_folium(m, width=None, height=600)
+    st_folium(m, width="100%", height=600)
 
     # Regional plots
-    #st.markdown("### Sumatra Tide Gauges")
     if not sumatra_df.empty:
-        st.plotly_chart(build_subplot(sumatra_df, "Sumatra Sea Level", cols=3, rows=7))
-    else:
-        st.info("No Sumatra stations available.")
-
-    #st.markdown("### Java Tide Gauges")
+        st.plotly_chart(build_subplot(api_key, sumatra_df, "Sumatra Sea Level", cols=3, rows=7))
     if not java_df.empty:
-        st.plotly_chart(build_subplot(java_df, "Java Sea Level", cols=3, rows=9))
-    else:
-        st.info("No Java stations available.")
-
-    #st.markdown("### Sulawesi Tide Gauges")
+        st.plotly_chart(build_subplot(api_key, java_df, "Java Sea Level", cols=3, rows=9))
     if not sulawesi_df.empty:
-        st.plotly_chart(build_subplot(sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
-    else:
-        st.info("No Sulawesi stations available.")
-
-    #st.markdown("### Papua Tide Gauges")
+        st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
-        st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
-    else:
-        st.info("No Papua stations available.")
-
-
-
-
-
-
-
-
-
+        st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
