@@ -1,7 +1,7 @@
 import streamlit as st
 import regional_map
 import earthquake_events
-import tide_gauge
+#import tide_gauge
 
 # Wide layout ensures tabs stretch across the page
 st.set_page_config(page_title="Tsunami & Tide Gauge Dashboard", layout="wide")
@@ -50,5 +50,6 @@ if api_key:
         tide_gauge.show(api_key)
 else:
     st.warning("Please enter your IOC API Key to continue.")
+
 
 
