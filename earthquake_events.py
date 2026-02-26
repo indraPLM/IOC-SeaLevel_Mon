@@ -13,7 +13,7 @@ import plotly.graph_objs as go
 import streamlit as st
 from streamlit_folium import st_folium
 
-API_KEY = os.getenv("IOC_API_KEY", api_key)
+#API_KEY = os.getenv("IOC_API_KEY", api_key)
 
 # --- Utility Functions ---
 def fetch_text_data(url, delimiter='|'):
@@ -73,10 +73,10 @@ gfz_match = match_event(gfz_df, t_ref)
 usgs_match = match_event(usgs, t_ref, time_column='time_usgs')
 
 # --- IOC Stations ---
-def get_stations():
+def get_stations(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
     params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
-    headers = {"X-Api-Key": API_KEY, "Accept": "application/json"}
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
 
@@ -180,6 +180,7 @@ def show():
     # --- Bottom Panel ---
     st.markdown("### Closest Tide Gauge Stations")
     st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+
 
 
 
