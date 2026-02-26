@@ -115,7 +115,7 @@ def build_closest_graphs(df):
     return fig
 
 # --- Streamlit Tab Content ---
-def show():
+def show(api_key):
     st.subheader("Earthquake & IOC Sea Level Dashboard 🌏")
 
     # --- Top Panel ---
@@ -180,6 +180,7 @@ def show():
     # --- Bottom Panel ---
     st.markdown("### Closest Tide Gauge Stations")
     st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+
 
 
 
