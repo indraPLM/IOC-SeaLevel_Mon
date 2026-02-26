@@ -19,7 +19,7 @@ def get_stations(api_key):
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
 
-stations_df = get_stations()
+stations_df = get_stations(api_key)
 
 # --- Regional Filters ---
 def filter_region(df, lon_min, lon_max, lat_min, lat_max):
@@ -124,6 +124,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
 
