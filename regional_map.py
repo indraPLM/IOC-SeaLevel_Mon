@@ -92,7 +92,7 @@ def build_subplot(stations_df, title, cols, rows):
     return fig
 
 # --- Streamlit Tab Content ---
-def show():
+def show(api_key):
     #st.subheader("IOC Indonesia Tide Gauge Dashboard")
 
     # Folium map
@@ -124,6 +124,7 @@ def show():
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
 
