@@ -55,8 +55,8 @@ def build_map(df):
     return m
 
 # --- Fetch Tide Gauge Data ---
-def fetch_data(station_id, sensor="one-sensor",
-               start_date="2026-02-20", end_date="2026-02-23",api_key):
+def fetch_data(api_key,station_id, sensor="one-sensor",
+               start_date="2026-02-20", end_date="2026-02-23"):
     station_id = station_id.lower()
     url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
     params = {"days_per_page": 7, "page": 1,
@@ -124,6 +124,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
 
