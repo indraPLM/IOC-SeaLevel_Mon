@@ -1,0 +1,12 @@
+streamlit
+streamlit-folium
+pandas
+numpy
+requests
+folium
+plotly
+geopandas
+shapely
+bs4
+lxml
+obspy
