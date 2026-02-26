@@ -12,10 +12,10 @@ from streamlit_folium import st_folium
 #API_KEY = os.getenv("IOC_API_KEY", api_key)
 
 # --- Fetch IOC Stations ---
-def get_stations():
+def get_stations(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
     params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
-    headers = {"X-Api-Key": API_KEY, "Accept": "application/json"}
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
 
@@ -124,6 +124,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
 
