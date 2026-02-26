@@ -27,7 +27,7 @@ def filter_region(df, lon_min, lon_max, lat_min, lat_max):
 # --- Build Folium Map ---
 def build_map(df):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
-    m = folium.Map(location=[eq_lat, eq_lon], tiles=tiles, attr="ESRI", zoom_start=5)
+    m = folium.Map(location=[0, 118], tiles=tiles, attr="ESRI", zoom_start=5)
 
     for _, row in df.iterrows():
         if pd.notnull(row["Lat"]) and pd.notnull(row["Lon"]):
@@ -115,5 +115,6 @@ def show(api_key):
         st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
         st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
+
 
 
