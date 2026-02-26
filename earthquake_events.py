@@ -237,6 +237,8 @@ def show(api_key):
     st.markdown("### Closest Tide Gauge Stations")
                     
     st.plotly_chart(build_closest_graphs(api_key, closest_stations), use_container_width=True)
+    st.dataframe(stations_df)
+
 
 
 
