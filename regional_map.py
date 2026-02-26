@@ -25,16 +25,35 @@ def filter_region(df, lon_min, lon_max, lat_min, lat_max):
     ]
 
 # --- Build Folium Map ---
-def build_map(df):
+def build_map_with_eq(df):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
-    m = folium.Map(location=[0, 118], tiles=tiles, attr="ESRI", zoom_start=4.5)
+    m = folium.Map(location=[eq_lat, eq_lon], tiles=tiles, attr="ESRI", zoom_start=5)
+
     for _, row in df.iterrows():
         if pd.notnull(row["Lat"]) and pd.notnull(row["Lon"]):
+            popup_text = (
+                f"<b>Code:</b> {row['Code']}<br>"
+                f"<b>Location:</b> {row['Location']}<br>"
+                f"<b>Country:</b> {row['country']}<br>"
+                f"<b>Status:</b> {row['status']}"
+            )
+
+            # Choose marker color based on status
+            if row["status"] == 5:
+                marker_color = "red"
+            elif row["status"] == 1:
+                marker_color = "green"
+            else:
+                marker_color = "blue"
+
             folium.Marker(
                 location=[row["Lat"], row["Lon"]],
-                tooltip=row["Code"]
+                popup=popup_text,
+                tooltip=row["Code"],
+                icon=folium.Icon(color=marker_color, icon="info-sign")
             ).add_to(m)
     return m
+
 
 # --- Fetch Tide Gauge Data ---
 def fetch_data(api_key, station_id, sensor="one-sensor",
@@ -96,3 +115,4 @@ def show(api_key):
         st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
         st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
+
