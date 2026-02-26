@@ -98,7 +98,7 @@ def show():
     # Folium map
     st.markdown("### Tide Gauge Map")
     m = build_map(stations_df)
-    st_folium(m, width=800, height=500)
+    st_folium(m, width=None, height=500)
 
     # Regional plots
     st.markdown("### Sumatra Tide Gauges")
@@ -124,3 +124,4 @@ def show():
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
