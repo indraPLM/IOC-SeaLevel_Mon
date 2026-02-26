@@ -50,12 +50,61 @@ def build_map_with_eq(df, eq_lat, eq_lon):
                   icon=folium.DivIcon(html="""<div style="font-size:50px; color:red;">★</div>""")).add_to(m)
     return m
 
-def build_closest_graphs(df):
-    fig = sp.make_subplots(rows=len(df), cols=1, subplot_titles=[code for code in df["Code"]])
-    for i, row in enumerate(df.itertuples(), start=1):
-        fig.add_trace(go.Scatter(x=[0], y=[0], mode="lines", name=row.Code), row=i, col=1)
-    fig.update_layout(height=300*len(df)) # , title="Sea Level at Closest Stations")
+#def build_closest_graphs(df):
+#    fig = sp.make_subplots(rows=len(df), cols=1, subplot_titles=[code for code in df["Code"]])
+#    for i, row in enumerate(df.itertuples(), start=1):
+#        fig.add_trace(go.Scatter(x=[0], y=[0], mode="lines", name=row.Code), row=i, col=1)
+#    fig.update_layout(height=300*len(df)) # , title="Sea Level at Closest Stations")
+#    return fig
+
+# --- Fetch Tide Gauge Data ---
+def fetch_data(api_key, station_id, sensor="one-sensor",
+               start_date="2026-02-20", end_date="2026-02-23"):
+    station_id = station_id.lower()
+    url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
+    params = {
+        "days_per_page": 7, "page": 1,
+        "timestart": start_date, "timestop": end_date,
+        "flag_qc": "true"
+    }
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
+    r = requests.get(url, params=params, headers=headers)
+
+    if r.status_code == 200:
+        js = r.json()
+        if "data" in js and len(js["data"]) > 0:
+            df = pd.DataFrame(js["data"])
+            if "stime" in df.columns:
+                df["stime"] = pd.to_datetime(df["stime"])
+            return df
+    return pd.DataFrame(columns=["stime", "slevel"])
+
+
+# --- Helper to build subplot figure for closest stations ---
+def build_closest_graphs(api_key, stations_df):
+    stations = stations_df["Code"].tolist()
+    fig = sp.make_subplots(rows=len(stations), cols=1,
+                           subplot_titles=[code.upper() for code in stations])
+
+    for i, code in enumerate(stations, start=1):
+        df = fetch_data(api_key, code)
+        if not df.empty and "stime" in df.columns:
+            fig.add_trace(
+                go.Scatter(x=df["stime"], y=df["slevel"],
+                           mode="lines", name=code.upper()),
+                row=i, col=1
+            )
+        else:
+            # Add a placeholder trace if no data
+            fig.add_trace(
+                go.Scatter(x=[0], y=[0], mode="lines", name=f"{code.upper()} (no data)"),
+                row=i, col=1
+            )
+
+    fig.update_layout(height=300*len(stations),
+                      title="Sea Level at Closest Stations")
     return fig
+
 
 # --- Streamlit Tab Content ---
 def show(api_key):
@@ -106,7 +155,7 @@ def show(api_key):
         lambda row: geo_distance(y0, x0, row["Lat"], row["Lon"]) if pd.notnull(row["Lat"]) else None, axis=1
     )
     closest_stations = stations_df.nsmallest(10, "distance_km")
-
+    
     # --- Layout ---
     col_top1, col_top2 = st.columns([2, 1])
 
@@ -168,7 +217,10 @@ def show(api_key):
 
     # --- Bottom Panel ---
     st.markdown("### Closest Tide Gauge Stations")
-    st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+                    
+    st.plotly_chart(build_closest_graphs(api_key, closest_stations), use_container_width=True)
+
+
 
 
 
