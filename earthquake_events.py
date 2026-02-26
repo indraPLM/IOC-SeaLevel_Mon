@@ -119,7 +119,6 @@ def show():
     st.subheader("Earthquake & IOC Sea Level Dashboard 🌏")
 
     # --- Top Panel ---
-    st.markdown("## Top Panel")
     col_top1, col_top2 = st.columns([2, 1])  # wider map, narrower comparison
 
     with col_top1:
@@ -129,27 +128,59 @@ def show():
 
     with col_top2:
         st.markdown("### Earthquake Parameters")
-        st.write(f"**Coordinates:** Lat {y0:.2f}, Lon {x0:.2f}")
-        st.write(f"**Depth:** {d0:.1f} km")
 
-        # Magnitude comparison
-        bmkg_val = m0
-        gfz_val = gfz_match['mag'] if gfz_match is not None else None
-        usgs_val = usgs_match['mag'] if usgs_match is not None else None
+        # --- Metrics Display ---
+        col1, col2 = st.columns(2)
+        col1.markdown("## Magnitude")
+        col2.markdown("## Depth")
 
-        st.metric("BMKG", f"{bmkg_val:.2f}")
-        st.metric("GFZ", f"{gfz_val:.2f}" if gfz_val else "N/A")
-        st.metric("USGS", f"{usgs_val:.2f}" if usgs_val else "N/A")
+        cols = st.columns(6)
+        # BMKG reference
+        cols[0].metric("1. BMKG", f"{m0:.2f}")
+        cols[3].metric("1. BMKG", f"{d0:.1f} km")
 
-        # Differences
-        if gfz_val:
-            st.write(f"**BMKG − GFZ:** {bmkg_val - gfz_val:+.2f}")
-        if usgs_val:
-            st.write(f"**BMKG − USGS:** {bmkg_val - usgs_val:+.2f}")
+        # GFZ comparison
+        if gfz_match is not None:
+            delta_mag = round(gfz_match['mag'] - m0, 2)
+            delta_depth = round(gfz_match['depth'] - d0, 2)
+            dist_km = geo_distance(x0, y0, gfz_match['lon'], gfz_match['lat'])
+            cols[1].metric("2. GFZ", f"{gfz_match['mag']:.2f}", f"{delta_mag:+.2f}")
+            cols[4].metric("2. GFZ", f"{gfz_match['depth']:.1f} km", f"{delta_depth:+.1f}")
+        else:
+            cols[1].metric("2. GFZ", "N/A")
+            cols[4].metric("2. GFZ", "N/A")
+
+        # USGS comparison
+        if usgs_match is not None:
+            delta_mag = round(usgs_match['mag'] - m0, 2)
+            delta_depth = round(usgs_match['depth'] - d0, 2)
+            dist_km = geo_distance(x0, y0, usgs_match['lon'], usgs_match['lat'])
+            cols[2].metric("3. USGS", f"{usgs_match['mag']:.2f}", f"{delta_mag:+.2f}")
+            cols[5].metric("3. USGS", f"{usgs_match['depth']:.1f} km", f"{delta_depth:+.1f}")
+        else:
+            cols[2].metric("3. USGS", "N/A")
+            cols[5].metric("3. USGS", "N/A")
+
+        # --- Location Display ---
+        st.markdown("## Longitude / Latitude")
+        loc_cols = st.columns(3)
+        loc_cols[0].metric("1. BMKG", f"{x0:.2f} ; {y0:.2f}")
+        if gfz_match is not None:
+            dist_km = geo_distance(x0, y0, gfz_match['lon'], gfz_match['lat'])
+            loc_cols[1].metric("2. GFZ", f"{gfz_match['lon']:.2f} ; {gfz_match['lat']:.2f}", f"{dist_km:.1f} km")
+        else:
+            loc_cols[1].metric("2. GFZ", "N/A")
+
+        if usgs_match is not None:
+            dist_km = geo_distance(x0, y0, usgs_match['lon'], usgs_match['lat'])
+            loc_cols[2].metric("3. USGS", f"{usgs_match['lon']:.2f} ; {usgs_match['lat']:.2f}", f"{dist_km:.1f} km")
+        else:
+            loc_cols[2].metric("3. USGS", "N/A")
 
     # --- Bottom Panel ---
-    st.markdown("## Bottom Panel")
     st.markdown("### Closest Tide Gauge Stations")
     st.plotly_chart(build_closest_graphs(closest_stations), use_container_width=True)
+
+
 
 
