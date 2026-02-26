@@ -37,7 +37,7 @@ papua_df   = filter_region(stations_df, 128, 145, -8, 2)
 # --- Build Folium Map ---
 def build_map(df):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
-    m = folium.Map(location=[-12, 115], tiles=tiles, attr="ESRI", zoom_start=4.5)
+    m = folium.Map(location=[0, 118], tiles=tiles, attr="ESRI", zoom_start=4.5)
     for _, row in df.iterrows():
         if pd.notnull(row["Lat"]) and pd.notnull(row["Lon"]):
             popup_text = f""" 
@@ -98,7 +98,7 @@ def show():
     # Folium map
     #st.markdown("### Tide Gauge Map")
     m = build_map(stations_df)
-    st_folium(m, width=None, height=500)
+    st_folium(m, width=None, height=600)
 
     # Regional plots
     #st.markdown("### Sumatra Tide Gauges")
@@ -124,5 +124,6 @@ def show():
         st.plotly_chart(build_subplot(papua_df, "Papua Sea Level", cols=3, rows=2))
     else:
         st.info("No Papua stations available.")
+
 
 
