@@ -147,16 +147,28 @@ def get_closest_stations(stations_df, tsu_lat, tsu_lon, n=5):
     return stations_df.nsmallest(n, "distance_km")
 
 # --- Fetch IOC Tide Gauge Data ---
-def fetch_data(api_key, station_id, sensor="one-sensor", days_back=1):
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days_back)
-    end_str = end_date.strftime("%Y-%m-%d")
+def fetch_data(api_key, station_id, event_time, sensor="one-sensor", days_back=1):
+    """
+    Fetch IOC tide gauge data around the tsunami occurrence time.
+    event_time: datetime object of the tsunami occurrence
+    days_back: number of days before and after the event to fetch
+    """
+    # Define time window around the tsunami event
+    start_date = event_time - timedelta(days=days_back)
+    end_date = event_time + timedelta(days=days_back)
+
     start_str = start_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
 
     station_id = station_id.lower()
     url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
-    params = {"days_per_page": 7, "page": 1,
-              "timestart": start_str, "timestop": end_str, "flag_qc": "true"}
+    params = {
+        "days_per_page": 7,
+        "page": 1,
+        "timestart": start_str,
+        "timestop": end_str,
+        "flag_qc": "true"
+    }
     headers = {"X-Api-Key": api_key, "Accept": "application/json"}
     r = requests.get(url, params=params, headers=headers)
 
@@ -170,10 +182,11 @@ def fetch_data(api_key, station_id, sensor="one-sensor", days_back=1):
     return pd.DataFrame(columns=["stime", "slevel"])
 
 # --- Build graph from IOC sea level data ---
-def build_closest_graphs(api_key, df):
+
+def build_closest_graphs(api_key, df, event_time):
     fig = sp.make_subplots(rows=len(df), cols=1, subplot_titles=[code for code in df["Code"]])
     for i, row in enumerate(df.itertuples(), start=1):
-        tide_df = fetch_data(api_key, row.Code)
+        tide_df = fetch_data(api_key, row.Code, event_time)
         if not tide_df.empty:
             fig.add_trace(go.Scatter(x=tide_df["stime"], y=tide_df["slevel"],
                                      mode="lines", name=row.Code), row=i, col=1)
@@ -183,17 +196,12 @@ def build_closest_graphs(api_key, df):
     return fig
 
 # --- Streamlit Integration ---
-
 def show(api_key):
     st.subheader("Click Tsunami Location on Map 🌊")
 
-    # Load catalog
     catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
-
-    # Load IOC stations once
     stations_df = get_stations(api_key)
 
-    # Map tsunami catalog
     m = map_tsunami_catalog_validity_layers(catalog_df)
     map_data = st_folium(m, width="100%", height=700)
 
@@ -201,13 +209,19 @@ def show(api_key):
         tsu_lat = map_data["last_clicked"]["lat"]
         tsu_lon = map_data["last_clicked"]["lng"]
 
-        st.success(f"Selected location: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}")
+        # Find the nearest tsunami event in catalog to clicked location
+        clicked_event = catalog_df.iloc[
+            ((catalog_df["lat"] - tsu_lat)**2 + (catalog_df["lon"] - tsu_lon)**2).argmin()
+        ]
+        event_time = clicked_event["datetime"]
 
-        # Pass stations_df explicitly
+        st.success(f"Selected location: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}, Event time: {event_time}")
+
         closest = get_closest_stations(stations_df, tsu_lat, tsu_lon)
         st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
 
-        st.plotly_chart(build_closest_graphs(api_key, closest), use_container_width=True)
+        # Pass event_time into graph builder
+        st.plotly_chart(build_closest_graphs(api_key, closest, event_time), use_container_width=True)
 
         # Map visualization with tsunami + closest stations
         m2 = folium.Map(location=[tsu_lat, tsu_lon], zoom_start=5)
@@ -217,4 +231,5 @@ def show(api_key):
                           popup=f"{row['Code']} ({row['distance_km']} km)",
                           icon=folium.Icon(color="blue")).add_to(m2)
         st_folium(m2, width="100%", height=500)
+
 
