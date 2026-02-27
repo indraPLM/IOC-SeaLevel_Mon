@@ -239,7 +239,7 @@ def show(api_key):
     catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
 
     # Pass DataFrame to mapping function
-    m = map_tsunami_catalog_with_layers(catalog_df)
+    m = map_tsunami_catalog_validity_layers(catalog_df)
     map_data = st_folium(m, width="100%", height=500)
 
     if map_data and map_data["last_clicked"]:
