@@ -8,7 +8,7 @@ import streamlit as st
 from obspy.geodetics import locations2degrees, degrees2kilometers
 from datetime import datetime, timedelta
 
-API_KEY = "YOUR_API_KEY"
+#API_KEY = "YOUR_API_KEY"
 
 # --- IOC Stations ---
 def get_stations(api_key):
@@ -69,7 +69,7 @@ def build_closest_graphs(api_key, df):
     return fig
 
 # --- Streamlit Integration ---
-def show_closest_stations():
+def show(api_key):
     st.subheader("Click Tsunami Location on Map 🌊")
 
     # Base map to click
