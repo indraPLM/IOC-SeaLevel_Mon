@@ -147,15 +147,16 @@ def get_closest_stations(stations_df, tsu_lat, tsu_lon, n=20):
     return stations_df.nsmallest(n, "distance_km")
 
 # --- Fetch IOC Tide Gauge Data ---
-def fetch_data(api_key, station_id, event_time, sensor="one-sensor"):
+def fetch_data(api_key, station_id, event_time, sensor="one-sensor", add_days=2):
     """
     Fetch IOC tide gauge data around the tsunami occurrence time.
     event_time: datetime object of the tsunami occurrence
     days_back: number of days before and after the event to fetch
     """
     # Define time window around the tsunami event
-    start_date = event_time - timedelta(days=1)
-    end_date = event_time + timedelta(days=2)
+    #start_date = event_time - timedelta(days=add_days)
+    start_date = event_time
+    end_date = event_time + timedelta(days=add_days)
 
     start_str = start_date.strftime("%Y-%m-%d")
     end_str = end_date.strftime("%Y-%m-%d")
