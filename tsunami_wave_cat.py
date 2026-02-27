@@ -244,7 +244,7 @@ def show(api_key):
 
     # Map tsunami catalog
     m = map_tsunami_catalog_validity_layers(catalog_df)
-    map_data = st_folium(m, width="100%", height=500)
+    map_data = st_folium(m, width="100%", height=700)
 
     if map_data and map_data["last_clicked"]:
         tsu_lat = map_data["last_clicked"]["lat"]
