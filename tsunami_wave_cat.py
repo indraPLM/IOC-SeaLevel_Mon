@@ -50,7 +50,7 @@ def load_noaa_tsunami_catalog(csv_path):
     return df
 
 # --- Map Tsunami Catalog Events ---
-def map_tsunami_catalog(df):
+def map_tsunami_catalog_old(df):
     # Center map globally
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
     m = folium.Map(location=[0, 120], tiles=tiles, attr="ESRI", zoom_start=5)
@@ -100,6 +100,55 @@ def map_tsunami_catalog(df):
             location=[lat, lon],
             popup=popup_text,
             tooltip=f"Validity {validity}, Cause {cause} - {location}",
+            icon=folium.DivIcon(html=f"""<div style="font-size:18px; color:{color};">{symbol}</div>""")
+        ).add_to(m)
+
+    return m
+
+# --- Map Tsunami Catalog Events ---
+def map_tsunami_catalog(df):
+    tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+    m = folium.Map(location=[0, 120], tiles=tiles, attr="ESRI", zoom_start=5)
+
+    validity_colors = {
+        -1: "black", 0: "gray", 1: "purple",
+        2: "orange", 3: "blue", 4: "red"
+    }
+
+    def get_symbol(cause):
+        if cause in [1, 2, 3]:
+            return "★"   # earthquake
+        elif cause in [4, 5, 6, 7]:
+            return "▲"   # volcano
+        elif cause == 8:
+            return "▼"   # landslide
+        else:
+            return "●"   # other
+
+    for _, row in df.iterrows():
+        lat, lon = row["lat"], row["lon"]
+        mag = row.get("mag", None)
+        vald = row.get("validity", None)
+        source = row.get("source", None)
+        country = row.get("country", "")
+        location = row.get("location", "")
+        event_time = row.get("datetime", "")
+
+        popup_text = (
+            f"<b>Date/Time:</b> {event_time}<br>"
+            f"<b>Magnitude:</b> {mag}<br>"
+            f"<b>Validity:</b> {vald}<br>"
+            f"<b>Location:</b> {location}, {country}<br>"
+            f"<b>Cause:</b> {source}"
+        )
+
+        color = validity_colors.get(vald, "green")
+        symbol = get_symbol(source)
+
+        folium.Marker(
+            location=[lat, lon],
+            popup=popup_text,
+            tooltip=f"Validity {vald}, Cause {source} - {location}",
             icon=folium.DivIcon(html=f"""<div style="font-size:18px; color:{color};">{symbol}</div>""")
         ).add_to(m)
 
@@ -164,7 +213,37 @@ def build_closest_graphs(api_key, df):
     return fig
 
 # --- Streamlit Integration ---
+
 def show(api_key):
+    st.subheader("Click Tsunami Location on Map 🌊")
+
+    # Load catalog first
+    catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
+
+    # Pass DataFrame to mapping function
+    m = map_tsunami_catalog(catalog_df)
+    map_data = st_folium(m, width="100%", height=500)
+
+    if map_data and map_data["last_clicked"]:
+        tsu_lat = map_data["last_clicked"]["lat"]
+        tsu_lon = map_data["last_clicked"]["lng"]
+
+        st.success(f"Selected location: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}")
+
+        closest = get_closest_stations(tsu_lat, tsu_lon)
+        st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
+
+        st.plotly_chart(build_closest_graphs(api_key, closest), use_container_width=True)
+
+        m2 = folium.Map(location=[tsu_lat, tsu_lon], zoom_start=5)
+        folium.Marker([tsu_lat, tsu_lon], popup="Tsunami Location", icon=folium.Icon(color="red")).add_to(m2)
+        for _, row in closest.iterrows():
+            folium.Marker([row["Lat"], row["Lon"]],
+                          popup=f"{row['Code']} ({row['distance_km']} km)",
+                          icon=folium.Icon(color="blue")).add_to(m2)
+        st_folium(m2, width="100%", height=500)
+
+def testshow(no_api_key):
     st.subheader("Click Tsunami Location on Map 🌊")
 
     # Base map to click
