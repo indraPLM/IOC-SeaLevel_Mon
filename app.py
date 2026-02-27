@@ -43,13 +43,14 @@ if api_key:
     #with tab1:
     #    regional_map.show(api_key)
 
-    with tab2:
-        earthquake_events.show(api_key)
+    #with tab2:
+    #    earthquake_events.show(api_key)
 
     with tab3:
         tsunami_wave_cat.show(api_key)
 else:
     st.warning("Please enter your IOC API Key to continue.")
+
 
 
 
