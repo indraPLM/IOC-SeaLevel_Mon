@@ -18,7 +18,7 @@ def get_stations(api_key):
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
 
-stations_df = get_stations()
+#stations_df = get_stations()
 
 # --- Distance helper ---
 def geo_distance(lat0, lon0, lat1, lon1):
