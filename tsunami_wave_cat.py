@@ -13,20 +13,7 @@ from datetime import datetime, timedelta
 # --- Load Tsunami Catalog ---
 def load_noaa_tsunami_catalog(csv_path):
     # Load the CSV with flexible parsing
-    # Try multiple encodings and force comma delimiter
-    for enc in ["utf-8", "latin1", "cp1252"]:
-        try:
-            df = pd.read_csv(
-                csv_path,
-                sep=",",              # force comma delimiter
-                encoding=enc,
-                errors="replace",     # replace undecodable chars
-                low_memory=False,
-                engine="python"       # tolerant parser
-            )
-            break
-        except Exception:
-            continue
+    df=pd.read_csv(csv_path,encoding="latin1")
 
     # Combine year/month/day/hour/minute/second into a datetime column
     df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
