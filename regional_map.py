@@ -56,8 +56,15 @@ def build_map(df):
 
 
 # --- Fetch Tide Gauge Data ---
-def fetch_data(api_key, station_id, sensor="one-sensor",
-               start_date="2026-02-20", end_date="2026-02-23"):
+def fetch_data(api_key, station_id, sensor="one-sensor"):
+    # Compute dynamic date range: end = now, start = 1 day before
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=2)
+
+    # Format as YYYY-MM-DD for IOC API
+    end_str = end_date.strftime("%Y-%m-%d")
+    start_str = start_date.strftime("%Y-%m-%d")
+                   
     station_id = station_id.lower()
     url = f"https://api.ioc-sealevelmonitoring.org/v2/research/stations/{station_id}/sensors/{sensor}/data"
     params = {"days_per_page": 7, "page": 1,
@@ -115,6 +122,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
         st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
+
 
 
 
