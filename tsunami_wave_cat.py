@@ -187,7 +187,8 @@ def geo_distance(lat0, lon0, lat1, lon1):
     return round(degrees2kilometers(locations2degrees(lat0, lon0, lat1, lon1)), 2)
 
 # --- Find Closest Stations given tsunami lat/lon ---
-def get_closest_stations(tsu_lat, tsu_lon, n=5):
+def get_closest_stations(stations_df, tsu_lat, tsu_lon, n=5):
+    stations_df = stations_df.copy()
     stations_df["distance_km"] = stations_df.apply(
         lambda row: geo_distance(tsu_lat, tsu_lon, row["Lat"], row["Lon"]) 
         if pd.notnull(row["Lat"]) else None, axis=1
@@ -235,10 +236,13 @@ def build_closest_graphs(api_key, df):
 def show(api_key):
     st.subheader("Click Tsunami Location on Map 🌊")
 
-    # Load catalog first
+    # Load catalog
     catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
 
-    # Pass DataFrame to mapping function
+    # Load IOC stations once
+    stations_df = get_stations(api_key)
+
+    # Map tsunami catalog
     m = map_tsunami_catalog_validity_layers(catalog_df)
     map_data = st_folium(m, width="100%", height=500)
 
@@ -248,37 +252,10 @@ def show(api_key):
 
         st.success(f"Selected location: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}")
 
-        closest = get_closest_stations(tsu_lat, tsu_lon)
+        # Pass stations_df explicitly
+        closest = get_closest_stations(stations_df, tsu_lat, tsu_lon)
         st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
 
-        st.plotly_chart(build_closest_graphs(api_key, closest), use_container_width=True)
-
-        m2 = folium.Map(location=[tsu_lat, tsu_lon], zoom_start=5)
-        folium.Marker([tsu_lat, tsu_lon], popup="Tsunami Location", icon=folium.Icon(color="red")).add_to(m2)
-        for _, row in closest.iterrows():
-            folium.Marker([row["Lat"], row["Lon"]],
-                          popup=f"{row['Code']} ({row['distance_km']} km)",
-                          icon=folium.Icon(color="blue")).add_to(m2)
-        st_folium(m2, width="100%", height=500)
-
-def testshow(no_api_key):
-    st.subheader("Click Tsunami Location on Map 🌊")
-
-    # Base map to click
-    st.markdown("Click anywhere on the map to select a tsunami location.")
-    m = map_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")                      
-    map_data = st_folium(m, width="100%", height=500)
-
-    if map_data and map_data["last_clicked"]:
-        tsu_lat = map_data["last_clicked"]["lat"]
-        tsu_lon = map_data["last_clicked"]["lng"]
-
-        st.success(f"Selected location: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}")
-
-        closest = get_closest_stations(tsu_lat, tsu_lon)
-        st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
-
-        # Plot tide gauge data
         st.plotly_chart(build_closest_graphs(api_key, closest), use_container_width=True)
 
         # Map visualization with tsunami + closest stations
@@ -289,3 +266,4 @@ def testshow(no_api_key):
                           popup=f"{row['Code']} ({row['distance_km']} km)",
                           icon=folium.Icon(color="blue")).add_to(m2)
         st_folium(m2, width="100%", height=500)
+
