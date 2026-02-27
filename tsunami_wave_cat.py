@@ -49,13 +49,14 @@ def load_noaa_tsunami_catalog(csv_path):
 
     return df
 
-def map_tsunami_catalog_with_layers(df):
-    # Define alias for ESRI Ocean basemap
+def map_tsunami_catalog_validity_layers(df):
+    # Alias for ESRI Ocean basemap
     esri_ocean_map = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
 
-    # Initialize map with alias
+    # Initialize map
     m = folium.Map(location=[0, 120], tiles=esri_ocean_map, attr="ESRI", zoom_start=5)
 
+    # Validity categories with labels + colors
     validity_colors = {
         -1: ("Erroneous", "black"),
         0: ("Seiche only", "gray"),
@@ -65,8 +66,10 @@ def map_tsunami_catalog_with_layers(df):
         4: ("Definite", "red")
     }
 
+    # Create FeatureGroups for each validity category
     validity_groups = {k: folium.FeatureGroup(name=v[0]) for k, v in validity_colors.items()}
 
+    # Symbol assignment by cause
     def get_symbol(cause):
         if cause in [1, 2, 3]:
             return "★"   # earthquake
@@ -77,6 +80,7 @@ def map_tsunami_catalog_with_layers(df):
         else:
             return "●"   # other
 
+    # Add markers into their validity group
     for _, row in df.iterrows():
         lat, lon = row["lat"], row["lon"]
         mag = row.get("mag", None)
@@ -110,14 +114,14 @@ def map_tsunami_catalog_with_layers(df):
             icon=folium.DivIcon(html=f"""<div style="font-size:18px; color:{color};">{symbol}</div>""")
         ).add_to(group)
 
+    # Add each validity group to the map
     for group in validity_groups.values():
         group.add_to(m)
 
+    # Add LayerControl (only validity layers)
     folium.LayerControl(collapsed=False).add_to(m)
 
     return m
-
-
 
 # --- Map Tsunami Catalog Events ---
 def map_tsunami_catalog(df):
