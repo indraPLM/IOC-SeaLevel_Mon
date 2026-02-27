@@ -49,61 +49,76 @@ def load_noaa_tsunami_catalog(csv_path):
 
     return df
 
-# --- Map Tsunami Catalog Events ---
-def map_tsunami_catalog_old(df):
-    # Center map globally
+def map_tsunami_catalog_with_layers(df):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
     m = folium.Map(location=[0, 120], tiles=tiles, attr="ESRI", zoom_start=5)
-    #m = folium.Map(location=[0, 120], zoom_start=2, tiles="OpenStreetMap")
-    # Define color scheme for validity 
-    validity_colors = { -1: "black", # erroneous entry 
-                       0: "gray", # seiche only 
-                       1: "purple", # very doubtful 
-                       2: "orange", # questionable 
-                       3: "blue", # probable 
-                       4: "red" # definite 
-                       }
-    # Define marker symbols for cause codes
+
+    # Validity categories and colors
+    validity_colors = {
+        -1: ("Erroneous", "black"),
+        0: ("Seiche only", "gray"),
+        1: ("Very doubtful", "purple"),
+        2: ("Questionable", "orange"),
+        3: ("Probable", "blue"),
+        4: ("Definite", "red")
+    }
+
+    # Create a FeatureGroup for each validity category
+    validity_groups = {k: folium.FeatureGroup(name=v[0]) for k, v in validity_colors.items()}
+
     def get_symbol(cause):
-        if cause in [1, 2, 3]:       # Earthquake-related
-            return "★"               # star
-        elif cause in [4, 5, 6, 7]:  # Volcano-related
-            return "▲"               # triangle
-        elif cause == 8:             # Landslide
-            return "▼"               # inverted triangle
-        else:                        # Other causes
-            return "●"               # dot
-    
+        if cause in [1, 2, 3]:
+            return "★"   # earthquake
+        elif cause in [4, 5, 6, 7]:
+            return "▲"   # volcano
+        elif cause == 8:
+            return "▼"   # landslide
+        else:
+            return "●"   # other
+
     for _, row in df.iterrows():
         lat, lon = row["lat"], row["lon"]
-        mag = row.get("mag", None)  # earthquake magnitude column
+        mag = row.get("mag", None)
         vald = row.get("validity", None)
+        source = row.get("source", None)
         country = row.get("country", "")
         location = row.get("location", "")
-        source = row.get("source", "")
         event_time = row.get("datetime", "")
 
         popup_text = (
             f"<b>Date/Time:</b> {event_time}<br>"
             f"<b>Magnitude:</b> {mag}<br>"
-            f"<b>Validity:</b> {vald} m<br>"
+            f"<b>Validity:</b> {vald}<br>"
             f"<b>Location:</b> {location}, {country}<br>"
-            f"<b>Cause:</b> {source} m<br>"
+            f"<b>Cause:</b> {source}"
         )
 
-        # Pick color based on validity rating
-        color = validity_colors.get(validity, "green")
-        # Pick symbol based on cause code
-        symbol = get_symbol(cause)
+        # Assign marker to the correct validity group
+        if vald in validity_colors:
+            group = validity_groups[vald]
+            color = validity_colors[vald][1]
+        else:
+            group = m  # fallback
+            color = "green"
+
+        symbol = get_symbol(source)
 
         folium.Marker(
             location=[lat, lon],
             popup=popup_text,
-            tooltip=f"Validity {validity}, Cause {cause} - {location}",
+            tooltip=f"Validity {vald}, Cause {source} - {location}",
             icon=folium.DivIcon(html=f"""<div style="font-size:18px; color:{color};">{symbol}</div>""")
-        ).add_to(m)
+        ).add_to(group)
+
+    # Add all groups to the map
+    for group in validity_groups.values():
+        group.add_to(m)
+
+    # Add layer control
+    folium.LayerControl(collapsed=False).add_to(m)
 
     return m
+
 
 # --- Map Tsunami Catalog Events ---
 def map_tsunami_catalog(df):
@@ -221,7 +236,7 @@ def show(api_key):
     catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
 
     # Pass DataFrame to mapping function
-    m = map_tsunami_catalog(catalog_df)
+    m = map_tsunami_catalog_with_layers(catalog_df)
     map_data = st_folium(m, width="100%", height=500)
 
     if map_data and map_data["last_clicked"]:
