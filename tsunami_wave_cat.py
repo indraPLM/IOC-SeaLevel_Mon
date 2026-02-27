@@ -10,6 +10,101 @@ from datetime import datetime, timedelta
 
 #API_KEY = "YOUR_API_KEY"
 
+# --- Load Tsunami Catalog ---
+def load_noaa_tsunami_catalog(csv_path):
+    # Load the CSV with flexible parsing
+    df = pd.read_csv(csv_path, low_memory=False)
+
+    # Combine year/month/day/hour/minute/second into a datetime column
+    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+    df["Mo"] = pd.to_numeric(df["Mo"], errors="coerce").fillna(1)
+    df["Dy"] = pd.to_numeric(df["Dy"], errors="coerce").fillna(1)
+    df["Hr"] = pd.to_numeric(df["Hr"], errors="coerce").fillna(0)
+    df["Mn"] = pd.to_numeric(df["Mn"], errors="coerce").fillna(0)
+    df["Sec"] = pd.to_numeric(df["Sec"], errors="coerce").fillna(0)
+
+    df["datetime"] = pd.to_datetime(dict(
+        year=df["Year"],
+        month=df["Mo"],
+        day=df["Dy"],
+        hour=df["Hr"],
+        minute=df["Mn"],
+        second=df["Sec"]
+    ), errors="coerce")
+
+    # Clean and rename key columns
+    df.rename(columns={
+        "Latitude": "lat",
+        "Longitude": "lon",
+        "Earthquake Magnitude": "mag",
+        "Tsunami Event Validity": "validity",
+        "Tsunami Cause Code" : "source",
+        "Maximum Number": "max_wave_height",
+        "Country": "country",
+        "Location Name": "location"        
+    }, inplace=True)
+
+    # Filter out rows without coordinates
+    df = df[pd.notnull(df["lat"]) & pd.notnull(df["lon"])]
+
+    return df
+
+# --- Map Tsunami Catalog Events ---
+def map_tsunami_catalog(df):
+    # Center map globally
+    tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+    m = folium.Map(location=[0, 120], tiles=tiles, attr="ESRI", zoom_start=5)
+    #m = folium.Map(location=[0, 120], zoom_start=2, tiles="OpenStreetMap")
+    # Define color scheme for validity 
+    validity_colors = { -1: "black", # erroneous entry 
+                       0: "gray", # seiche only 
+                       1: "purple", # very doubtful 
+                       2: "orange", # questionable 
+                       3: "blue", # probable 
+                       4: "red" # definite 
+                       }
+    # Define marker symbols for cause codes
+    def get_symbol(cause):
+        if cause in [1, 2, 3]:       # Earthquake-related
+            return "★"               # star
+        elif cause in [4, 5, 6, 7]:  # Volcano-related
+            return "▲"               # triangle
+        elif cause == 8:             # Landslide
+            return "▼"               # inverted triangle
+        else:                        # Other causes
+            return "●"               # dot
+    
+    for _, row in df.iterrows():
+        lat, lon = row["lat"], row["lon"]
+        mag = row.get("mag", None)  # earthquake magnitude column
+        vald = row.get("validity", None)
+        country = row.get("country", "")
+        location = row.get("location", "")
+        source = row.get("source", "")
+        event_time = row.get("datetime", "")
+
+        popup_text = (
+            f"<b>Date/Time:</b> {event_time}<br>"
+            f"<b>Magnitude:</b> {mag}<br>"
+            f"<b>Validity:</b> {vald} m<br>"
+            f"<b>Location:</b> {location}, {country}<br>"
+            f"<b>Cause:</b> {source} m<br>"
+        )
+
+        # Pick color based on validity rating
+        color = validity_colors.get(validity, "green")
+        # Pick symbol based on cause code
+        symbol = get_symbol(cause)
+
+        folium.Marker(
+            location=[lat, lon],
+            popup=popup_text,
+            tooltip=f"Validity {validity}, Cause {cause} - {location}",
+            icon=folium.DivIcon(html=f"""<div style="font-size:18px; color:{color};">{symbol}</div>""")
+        ).add_to(m)
+
+    return m
+
 # --- IOC Stations ---
 def get_stations(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
@@ -73,8 +168,8 @@ def show(api_key):
     st.subheader("Click Tsunami Location on Map 🌊")
 
     # Base map to click
-    m = folium.Map(location=[0, 120], zoom_start=3)
     st.markdown("Click anywhere on the map to select a tsunami location.")
+    m = map_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")                      
     map_data = st_folium(m, width="100%", height=500)
 
     if map_data and map_data["last_clicked"]:
