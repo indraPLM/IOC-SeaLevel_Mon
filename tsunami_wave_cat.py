@@ -198,6 +198,60 @@ def build_closest_graphs(api_key, df, event_time):
 
 # --- Streamlit Integration ---
 def show(api_key):
+    st.subheader("IOC Tide Gauge Data 🌊")
+
+    stations_df = get_stations(api_key)
+
+    # --- Show Map First ---
+    st.markdown("### Tsunami Catalog Map")
+    catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
+    m = map_tsunami_catalog_validity_layers(catalog_df)
+    map_data = st_folium(m, width="100%", height=700)
+
+    # --- Manual Input Section ---
+    st.markdown("### Manual Input for Tsunami Event")
+
+    # If user clicked on map, pre-fill manual inputs with metadata
+    if map_data and map_data["last_clicked"]:
+        tsu_lat = map_data["last_clicked"]["lat"]
+        tsu_lon = map_data["last_clicked"]["lng"]
+
+        # Find nearest catalog event to clicked location
+        clicked_event = catalog_df.iloc[
+            ((catalog_df["lat"] - tsu_lat)**2 + (catalog_df["lon"] - tsu_lon)**2).argmin()
+        ]
+        default_event_time = clicked_event["datetime"]
+        st.info(f"Metadata copied from map: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}, Event time {default_event_time}")
+    else:
+        tsu_lat, tsu_lon, default_event_time = -6.2, 106.8, datetime.today()
+
+    # Manual inputs (pre-filled if map was clicked)
+    tsu_lat = st.number_input("Latitude", value=float(tsu_lat), format="%.4f")
+    tsu_lon = st.number_input("Longitude", value=float(tsu_lon), format="%.4f")
+    event_date = st.date_input("Event Date", value=default_event_time.date())
+    event_time_input = st.time_input("Event Time", value=default_event_time.time())
+    event_time = datetime.combine(event_date, event_time_input)
+
+    if st.button("Fetch Closest Tide Gauge Data"):
+        st.success(f"Using input: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}, Event time: {event_time}")
+
+        closest = get_closest_stations(stations_df, tsu_lat, tsu_lon)
+        st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
+
+        st.plotly_chart(build_closest_graphs(api_key, closest, event_time), use_container_width=True)
+
+        # Map visualization
+        m2 = folium.Map(location=[tsu_lat, tsu_lon], zoom_start=5)
+        folium.Marker([tsu_lat, tsu_lon], popup="Tsunami Location", icon=folium.Icon(color="red")).add_to(m2)
+        for _, row in closest.iterrows():
+            folium.Marker([row["Lat"], row["Lon"]],
+                          popup=f"{row['Code']} ({row['distance_km']} km)",
+                          icon=folium.Icon(color="blue")).add_to(m2)
+        st_folium(m2, width="100%", height=500)
+
+
+# --- Streamlit Integration ---
+def test_show(api_key):
     st.subheader("Click Tsunami Location on Map 🌊")
 
     catalog_df = load_noaa_tsunami_catalog("noaa_tsunamis_catalog_to_2026-02-24.csv")
