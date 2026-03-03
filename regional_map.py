@@ -9,7 +9,7 @@ import plotly.graph_objs as go
 from streamlit_folium import st_folium
 
 # --- Fetch IOC Stations ---
-def get_stations_old(api_key):
+def get_stations(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
     params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
     headers = {"X-Api-Key": api_key, "Accept": "application/json"}
@@ -122,6 +122,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
         st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
+
 
 
 
