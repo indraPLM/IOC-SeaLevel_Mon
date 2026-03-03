@@ -167,7 +167,7 @@ def geo_distance(lat0, lon0, lat1, lon1):
     return round(degrees2kilometers(locations2degrees(lat0, lon0, lat1, lon1)), 2)
 
 # --- Find Closest Stations given tsunami lat/lon ---
-def get_closest_stations(stations_df, tsu_lat, tsu_lon, n=20):
+def get_closest_stations(stations_df, tsu_lat, tsu_lon, n=8):
     stations_df = stations_df.copy()
     stations_df["distance_km"] = stations_df.apply(
         lambda row: geo_distance(tsu_lat, tsu_lon, row["Lat"], row["Lon"]) 
