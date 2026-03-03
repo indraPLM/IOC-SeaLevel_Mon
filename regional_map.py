@@ -9,12 +9,43 @@ import plotly.graph_objs as go
 from streamlit_folium import st_folium
 
 # --- Fetch IOC Stations ---
-def get_stations(api_key):
+def get_stations_old(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
     params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
     headers = {"X-Api-Key": api_key, "Accept": "application/json"}
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
+
+def get_stations(api_key):
+    url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
+    params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
+    response = requests.get(url, params=params, headers=headers)
+
+    js = response.json()
+
+    # If API returns a list (previous behavior)
+    if isinstance(js, list):
+        df = pd.DataFrame(js)
+    # If API returns a dict wrapper (new/limited behavior)
+    elif isinstance(js, dict):
+        if "data" in js and isinstance(js["data"], list):
+            df = pd.DataFrame(js["data"])
+        elif "stations" in js and isinstance(js["stations"], list):
+            df = pd.DataFrame(js["stations"])
+        else:
+            # Show raw response for debugging
+            st.error("Unexpected API response format")
+            st.json(js)
+            return pd.DataFrame()
+    else:
+        st.error("Unexpected API response type")
+        return pd.DataFrame()
+
+    # Set index to start at 1
+    df.index = range(1, len(df) + 1)
+    return df
+
 
 # --- Regional Filters ---
 def filter_region(df, lon_min, lon_max, lat_min, lat_max):
@@ -122,6 +153,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
         st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
+
 
 
 
