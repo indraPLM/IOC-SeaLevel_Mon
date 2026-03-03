@@ -219,6 +219,8 @@ def show(api_key):
     if st.button("Fetch Closest Tide Gauge Data"):
         st.success(f"Using input: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}, Event time: {event_time}")
 
+        stations_df = get_stations()
+
         closest = get_closest_stations(stations_df, tsu_lat, tsu_lon)
         st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
 
