@@ -93,6 +93,7 @@ def map_tsunami_catalog_validity_layers(df):
         popup_text = (
             f"<b>Date/Time:</b> {event_time}<br>"
             f"<b>Magnitude:</b> {mag}<br>"
+            f"<b>Lat: {lat} ; Lon: {lon} </b>"
             f"<b>Validity:</b> {vald}<br>"
             f"<b>Location:</b> {location}, {country}<br>"
             f"<b>Cause:</b> {source}"
@@ -211,27 +212,10 @@ def show(api_key):
     # --- Manual Input Section ---
     st.markdown("### Manual Input for Tsunami Event")
 
-    # If user clicked on map, pre-fill manual inputs with metadata
-    if map_data and map_data["last_clicked"]:
-        tsu_lat = map_data["last_clicked"]["lat"]
-        tsu_lon = map_data["last_clicked"]["lng"]
-
-        # Find nearest catalog event to clicked location
-        clicked_event = catalog_df.iloc[
-            ((catalog_df["lat"] - tsu_lat)**2 + (catalog_df["lon"] - tsu_lon)**2).argmin()
-        ]
-        default_event_time = clicked_event["datetime"]
-        st.info(f"Metadata copied from map: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}, Event time {default_event_time}")
-    else:
-        tsu_lat, tsu_lon, default_event_time = -6.2, 106.8, datetime.today()
-
-    # Manual inputs (pre-filled if map was clicked)
-    tsu_lat = st.number_input("Latitude", value=float(tsu_lat), format="%.4f")
-    tsu_lon = st.number_input("Longitude", value=float(tsu_lon), format="%.4f")
-    event_date = st.date_input("Event Date", value=default_event_time.date())
-    event_time_input = st.time_input("Event Time", value=default_event_time.time())
-    event_time = datetime.combine(event_date, event_time_input)
-
+    tsu_lat = st.number_input("Latitude", value=float(52.512), format="%.4f")
+    tsu_lon = st.number_input("Longitude", value=float(160.324), format="%.4f")
+    event_time = st.datetime_input("Event Date", value="2025-07-29T23:24")
+   
     if st.button("Fetch Closest Tide Gauge Data"):
         st.success(f"Using input: Lat {tsu_lat:.2f}, Lon {tsu_lon:.2f}, Event time: {event_time}")
 
