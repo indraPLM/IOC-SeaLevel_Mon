@@ -30,12 +30,43 @@ def match_event(df, t_ref, time_column='date_time', tol_sec=60):
 def geo_distance(x0, y0, x1, y1):
     return round(degrees2kilometers(locations2degrees(x0, y0, x1, y1)), 2)
 
-def get_stations(api_key):
+def get_stations_old(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
     params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
     headers = {"X-Api-Key": api_key, "Accept": "application/json"}
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
+
+def get_stations(api_key):
+    url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
+    params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
+    response = requests.get(url, params=params, headers=headers)
+
+    js = response.json()
+
+    # If API returns a list (previous behavior)
+    if isinstance(js, list):
+        df = pd.DataFrame(js)
+    # If API returns a dict wrapper (new/limited behavior)
+    elif isinstance(js, dict):
+        if "data" in js and isinstance(js["data"], list):
+            df = pd.DataFrame(js["data"])
+        elif "stations" in js and isinstance(js["stations"], list):
+            df = pd.DataFrame(js["stations"])
+        else:
+            # Show raw response for debugging
+            st.error("Unexpected API response format")
+            st.json(js)
+            return pd.DataFrame()
+    else:
+        st.error("Unexpected API response type")
+        return pd.DataFrame()
+
+    # Set index to start at 1
+    df.index = range(1, len(df) + 1)
+    return df
+
 
 def build_map_with_eq(df, eq_lat, eq_lon):
     tiles = "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
@@ -244,6 +275,7 @@ def show(api_key):
                     
     st.plotly_chart(build_closest_graphs(api_key, closest_stations), use_container_width=True)
     st.dataframe(stations_df)
+
 
 
 
