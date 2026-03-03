@@ -16,35 +16,6 @@ def get_stations_old(api_key):
     response = requests.get(url, params=params, headers=headers)
     return pd.DataFrame(response.json())
 
-def get_stations(api_key):
-    url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
-    params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
-    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
-    response = requests.get(url, params=params, headers=headers)
-
-    js = response.json()
-
-    # If API returns a list (old behavior)
-    if isinstance(js, list):
-        return pd.DataFrame(js)
-
-    # If API returns a dict (new behavior)
-    if isinstance(js, dict):
-        if "data" in js and isinstance(js["data"], list):
-            return pd.DataFrame(js["data"])
-        elif "stations" in js and isinstance(js["stations"], list):
-            return pd.DataFrame(js["stations"])
-        else:
-            # Debug: show raw response so you can adapt
-            st.error("Unexpected API response format")
-            st.json(js)
-            return pd.DataFrame()
-
-    # Fallback
-    st.error("Unexpected API response type")
-    return pd.DataFrame()
-
-
 # --- Regional Filters ---
 def filter_region(df, lon_min, lon_max, lat_min, lat_max):
     return df[
@@ -151,6 +122,7 @@ def show(api_key):
         st.plotly_chart(build_subplot(api_key, sulawesi_df, "Sulawesi Sea Level", cols=3, rows=2))
     if not papua_df.empty:
         st.plotly_chart(build_subplot(api_key, papua_df, "Papua Sea Level", cols=3, rows=2))
+
 
 
 
