@@ -125,7 +125,7 @@ def map_tsunami_catalog_validity_layers(df):
     return m
 
 # --- IOC Stations ---
-def get_stations(api_key):
+def get_stations_old(api_key):
     url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
     params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
     headers = {"X-Api-Key": api_key, "Accept": "application/json"}
@@ -133,6 +133,34 @@ def get_stations(api_key):
     return pd.DataFrame(response.json())
 
 #stations_df = get_stations()
+
+def get_stations(api_key):
+    url = "https://api.ioc-sealevelmonitoring.org/v2/stations"
+    params = {"showall": "all", "order": "code", "dir": "asc", "limit": 2000}
+    headers = {"X-Api-Key": api_key, "Accept": "application/json"}
+    response = requests.get(url, params=params, headers=headers)
+
+    if response.status_code == 200:
+        js = response.json()
+        # Handle different possible structures
+        if isinstance(js, list):
+            return pd.DataFrame(js)
+        elif isinstance(js, dict):
+            # Try common keys
+            if "data" in js and isinstance(js["data"], list):
+                return pd.DataFrame(js["data"])
+            elif "stations" in js and isinstance(js["stations"], list):
+                return pd.DataFrame(js["stations"])
+            else:
+                st.error("Unexpected API response format: no station list found.")
+                return pd.DataFrame()
+        else:
+            st.error("Unexpected API response type.")
+            return pd.DataFrame()
+    else:
+        st.error(f"Failed to fetch stations: {response.status_code}")
+        return pd.DataFrame()
+
 
 # --- Distance helper ---
 def geo_distance(lat0, lon0, lat1, lon1):
