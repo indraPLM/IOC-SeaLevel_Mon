@@ -250,7 +250,8 @@ def show(api_key):
         stations_df = get_stations(api_key)
 
         closest = get_closest_stations(stations_df, tsu_lat, tsu_lon)
-        st.dataframe(closest[["Code", "Location", "country", "distance_km"]])
+        st.dataframe(closest[["Code", "Location", "country", "distance_km"]].reset_index(drop=True).rename_axis("Index").set_index(pd.RangeIndex(1, len(closest)+1))
+        # Reset index to start at 1 before displaying
 
         st.plotly_chart(build_closest_graphs(api_key, closest, event_time), use_container_width=True)
 
