@@ -200,7 +200,7 @@ def build_closest_graphs(api_key, df, event_time):
 def show(api_key):
     st.subheader("IOC Tide Gauge Data 🌊")
 
-    stations_df = get_stations(api_key)
+    #stations_df = get_stations(api_key)
 
     # --- Show Map First ---
     st.markdown("### Tsunami Catalog Map")
